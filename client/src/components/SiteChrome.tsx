@@ -8,9 +8,6 @@ const navItems = [
   { label: "Guides", href: "/guides", status: "Next" },
 ];
 
-// The owner console is now served by this same managed application.
-const ADMIN_CONSOLE_URL = "/admin/dashboard";
-
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [location] = useLocation();
@@ -25,11 +22,10 @@ export function SiteHeader() {
           {navItems.map((item) => <Link key={item.label} href={item.href} className={`nav-link ${item.href === "/csss" && ["/csss", "/opam"].includes(location) || location === item.href ? "is-active" : ""}`}>{item.label}<span className="nav-status">{item.status}</span></Link>)}
           <Link href="/opam" className="nav-cta">Start a drill <ArrowUpRight size={15} /></Link>
           <Link href="/founder" className="founder-nav-link">Contact your mentors</Link>
-          {ADMIN_CONSOLE_URL && <a href={ADMIN_CONSOLE_URL} className="admin-login-link" target="_blank" rel="noreferrer"><ShieldCheck size={14} /> Admin login</a>}
         </nav>
         <button className="icon-button mobile-only" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} onClick={() => setOpen((v) => !v)}>{open ? <X size={21} /> : <Menu size={21} />}</button>
       </div>
-      {open && <div className="mobile-menu mobile-only"><div className="container mobile-menu-inner">{navItems.map((item) => <Link key={item.label} href={item.href} className="mobile-nav-link" onClick={() => setOpen(false)}><span>{item.label}</span><span className="nav-status">{item.status}</span></Link>)}<Link href="/opam" className="nav-cta mobile-cta" onClick={() => setOpen(false)}>Start a drill <ArrowUpRight size={15} /></Link><Link href="/founder" className="mobile-nav-link founder-mobile-link" onClick={() => setOpen(false)}>Contact your mentors</Link><a href={ADMIN_CONSOLE_URL} className="admin-login-link mobile-admin-login" target="_blank" rel="noreferrer"><ShieldCheck size={14} /> Admin login</a></div></div>}
+      {open && <div className="mobile-menu mobile-only"><div className="container mobile-menu-inner">{navItems.map((item) => <Link key={item.label} href={item.href} className="mobile-nav-link" onClick={() => setOpen(false)}><span>{item.label}</span><span className="nav-status">{item.status}</span></Link>)}<Link href="/opam" className="nav-cta mobile-cta" onClick={() => setOpen(false)}>Start a drill <ArrowUpRight size={15} /></Link><Link href="/founder" className="mobile-nav-link founder-mobile-link" onClick={() => setOpen(false)}>Contact your mentors</Link></div></div>}
     </header>
   );
 }
