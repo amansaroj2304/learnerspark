@@ -5,7 +5,11 @@ import type { AppRouter } from "@shared/api";
 // The student account service is hosted with the public site. One HttpOnly
 // cookie is shared by CSSS and OPAM; no bearer tokens or passwords are stored
 // in localStorage, and the old contact-only recognition path is not used.
-export const isAccountServiceEnabled = true;
+//
+// Set to `false` to run the assessments as a guest (no login gate) while no
+// account database is configured. Flip back to `true` once `DATABASE_URL` is
+// set so results sync to student profiles again.
+export const isAccountServiceEnabled = false;
 
 const api = createTRPCProxyClient<AppRouter>({
   links: [httpBatchLink({
@@ -13,6 +17,9 @@ const api = createTRPCProxyClient<AppRouter>({
     fetch(input, init) { return globalThis.fetch(input, { ...init, credentials: "include" }); },
   })],
 });
+
+// Shared with other client libs (e.g. leads) so a single tRPC proxy is reused.
+export { api };
 
 export type StudentProfile = {
   student_id: string;

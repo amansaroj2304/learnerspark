@@ -4,11 +4,13 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { studentRouter } from "./routers/student";
 import { adminRouter } from "./routers/admin";
+import { waitlistRouter } from "./routers/waitlist";
 
 export const appRouter = router({
   system: systemRouter,
   student: studentRouter,
   admin: adminRouter,
+  waitlist: waitlistRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

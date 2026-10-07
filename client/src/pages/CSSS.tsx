@@ -3,8 +3,10 @@ import { AudioLines, Brain, Eye, Grid3X3, Headphones, Keyboard, ScanLine, Shield
 import { BackLink, Counter, MiniStat, PageShell, PrimaryButton, ProgressTrack, ReportMetric, RestartButton, SectionEyebrow, SiteFooter, SiteHeader, StatusChip, TimerRing, TrustMark } from "../components/SiteChrome";
 import QuestionDiagram from "../components/QuestionDiagram";
 import StudentRegistration from "../components/StudentRegistration";
+import LeadForm from "../components/LeadForm";
 import { CSSS_SECTION_COUNTS, CSSS_TOTAL, csssBank, type CsssQuestion, type CsssSection } from "../data/csssBank";
 import { isAccountServiceEnabled, recognizeStudent, saveAssessmentAttempt } from "../lib/student";
+import { isLeadFormEnabled } from "../lib/leads";
 
 type Screen = "landing" | "run" | "pause" | "results";
 type RunPhase = "flash" | "question";
@@ -36,6 +38,7 @@ export default function CSSS() {
   const [runPhase, setRunPhase] = useState<RunPhase>("question");
   const [studentReady, setStudentReady] = useState(false);
   const [registrationOpen, setRegistrationOpen] = useState(false);
+  const [leadOpen, setLeadOpen] = useState(false);
   const [ttsAvailable, setTtsAvailable] = useState(true);
   const [audioRevealed, setAudioRevealed] = useState(false);
   const answeringQuestionRef = useRef<string | null>(null);
@@ -93,7 +96,8 @@ export default function CSSS() {
   }
 
   function start() {
-    if (!studentReady) { setRegistrationOpen(true); return; }
+    if (isAccountServiceEnabled && !studentReady) { setRegistrationOpen(true); return; }
+    if (isLeadFormEnabled) { setLeadOpen(true); return; }
     beginRun();
   }
 
@@ -175,7 +179,7 @@ export default function CSSS() {
     return miss ? csssBank[miss.index].explanation : "Clean run in this section — keep the same pace and method.";
   }
 
-  if (screen === "landing") return <PageShell><SiteHeader /><main className="assessment-landing csss-landing"><div className="container assessment-landing-grid"><div><BackLink /><div className="assessment-kicker"><span className="assessment-badge olive">CSSS</span><span>COMPUTERISED SELECTION SCREENING SYSTEM</span></div><h1>Stay useful when the clock gets loud.</h1><p className="assessment-lead">CSSS now runs as a full 70-question cognitive battery across working memory, spatial perception, verbal + non-verbal reasoning, linguistic ability, and auditory discrimination.</p><PrimaryButton onClick={start}>Start the full practice set</PrimaryButton><p className="assessment-note"><ShieldCheck size={14} /> This is original practice content, not official board questions.</p></div><div className="assessment-spec csss-spec"><div className="spec-heading"><ScanLine size={21} /><span>THE RUN / FULL BANK</span></div><div className="spec-number">70</div><p>15 memory · 15 spatial · 15 reasoning · 15 language · 10 audio</p><div className="spec-list"><div><TimerReset size={16} /><span>5 sections / timers shortened by 10 sec</span></div><div><Keyboard size={16} /><span>once answered, no back navigation</span></div><div><AudioLines size={16} /><span>audio task plays once automatically</span></div></div><div className="spec-foot"><span>5—12 SEC</span><span>NO BACK</span></div></div></div><div className="container"><div className="assessment-legal"><strong>Read this first.</strong><span>Run the full bank in a quiet place. Listen once during the auditory task, then select the sequence you heard. The spoken content is intentionally not shown on screen.</span></div></div></main><SiteFooter />{registrationOpen && <StudentRegistration onClose={() => setRegistrationOpen(false)} onReady={() => { setStudentReady(true); setRegistrationOpen(false); beginRun(); }} />}</PageShell>;
+  if (screen === "landing") return <PageShell><SiteHeader /><main className="assessment-landing csss-landing"><div className="container assessment-landing-grid"><div><BackLink /><div className="assessment-kicker"><span className="assessment-badge olive">CSSS</span><span>COMPUTERISED SELECTION SCREENING SYSTEM</span></div><h1>Stay useful when the clock gets loud.</h1><p className="assessment-lead">CSSS now runs as a full 70-question cognitive battery across working memory, spatial perception, verbal + non-verbal reasoning, linguistic ability, and auditory discrimination.</p><PrimaryButton onClick={start}>Start the full practice set</PrimaryButton><p className="assessment-note"><ShieldCheck size={14} /> This is original practice content, not official board questions.</p></div><div className="assessment-spec csss-spec"><div className="spec-heading"><ScanLine size={21} /><span>THE RUN / FULL BANK</span></div><div className="spec-number">70</div><p>15 memory · 15 spatial · 15 reasoning · 15 language · 10 audio</p><div className="spec-list"><div><TimerReset size={16} /><span>5 sections / timers shortened by 10 sec</span></div><div><Keyboard size={16} /><span>once answered, no back navigation</span></div><div><AudioLines size={16} /><span>audio task plays once automatically</span></div></div><div className="spec-foot"><span>5—12 SEC</span><span>NO BACK</span></div></div></div><div className="container"><div className="assessment-legal"><strong>Read this first.</strong><span>Run the full bank in a quiet place. Listen once during the auditory task, then select the sequence you heard. The spoken content is intentionally not shown on screen.</span></div></div></main><SiteFooter />{registrationOpen && <StudentRegistration onClose={() => setRegistrationOpen(false)} onReady={() => { setStudentReady(true); setRegistrationOpen(false); beginRun(); }} />}{leadOpen && <LeadForm testLabel="CSSS" onClose={() => setLeadOpen(false)} onProceed={() => { setLeadOpen(false); beginRun(); }} />}</PageShell>;
 
   if (screen === "pause" && question && nextSection) {
     const NextMeta = sectionMeta[nextSection];

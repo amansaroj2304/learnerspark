@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { Clock3, Fingerprint, HeartHandshake, ShieldCheck, TimerReset } from "lucide-react";
 import { BackLink, ChoiceButton, Counter, PageShell, PrimaryButton, ProgressTrack, PrintLink, ReportMetric, RestartButton, SectionEyebrow, SiteFooter, SiteHeader, StatusChip, TrustMark } from "../components/SiteChrome";
 import StudentRegistration from "../components/StudentRegistration";
+import LeadForm from "../components/LeadForm";
 import { mixedOpamItems, opamBank, selfItems, OPAM_COUNTS, type OpamForcedItem, type OpamItem, type OpamSelfItem, type OpamSituationItem } from "../data/opamBank";
 import { isAccountServiceEnabled, recognizeStudent, saveAssessmentAttempt } from "../lib/student";
+import { isLeadFormEnabled } from "../lib/leads";
 
 type Screen = "landing" | "run" | "report";
 type Answer = { itemId: string; type: OpamItem["type"]; value: string; latency: number; score: number };
@@ -79,6 +81,7 @@ export default function OPAM() {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [studentReady, setStudentReady] = useState(false);
   const [registrationOpen, setRegistrationOpen] = useState(false);
+  const [leadOpen, setLeadOpen] = useState(false);
   const answeringItemRef = useRef<string | null>(null);
   const total = mixedOpamItems.length;
   const completed = answers.length;
@@ -121,8 +124,12 @@ export default function OPAM() {
   }
 
   function start() {
-    if (!studentReady) {
+    if (isAccountServiceEnabled && !studentReady) {
       setRegistrationOpen(true);
+      return;
+    }
+    if (isLeadFormEnabled) {
+      setLeadOpen(true);
       return;
     }
     beginRun();
@@ -211,6 +218,16 @@ export default function OPAM() {
             onReady={() => {
               setStudentReady(true);
               setRegistrationOpen(false);
+              beginRun();
+            }}
+          />
+        )}
+        {leadOpen && (
+          <LeadForm
+            testLabel="OPAM"
+            onClose={() => setLeadOpen(false)}
+            onProceed={() => {
+              setLeadOpen(false);
               beginRun();
             }}
           />

@@ -7,6 +7,8 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  leadWebhookUrl: process.env.LEAD_WEBHOOK_URL ?? "",
+  leadWebhookSecret: process.env.LEAD_WEBHOOK_SECRET ?? "",
 };
 
 /**
@@ -31,6 +33,11 @@ export function reportEnvStatus(): void {
   if (!ENV.oAuthServerUrl) {
     warnings.push(
       "OAUTH_SERVER_URL is not set — owner/admin OAuth login is disabled (student login is unaffected)."
+    );
+  }
+  if (!ENV.leadWebhookUrl) {
+    warnings.push(
+      "LEAD_WEBHOOK_URL is not set — lead-form submissions (name/email/phone) will not be delivered."
     );
   }
 
