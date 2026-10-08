@@ -69,7 +69,7 @@ Copy `.env.example` to `.env` and fill in what you need. The SPA (CSSS/OPAM) run
 | `VITE_OAUTH_PORTAL_URL` | OAuth portal used for the admin sign-in redirect. When unset, that button does nothing. |
 | `VITE_APP_ID` | Same OAuth client id as above, read at build time. |
 
-In production the server logs a `[env] WARNING` at boot for each missing non-critical variable, and **refuses to start if `JWT_SECRET` is unset** (bypass with `SKIP_ENV_VALIDATION=1` only if you accept the risk).
+In production the server logs a `[env] WARNING` at boot for each missing variable. Every variable is optional: the public site and the lead form keep working without any of them, and a missing `JWT_SECRET` only disables session-based login.
 
 Privacy behaviour follows from this: with no backend configured, no profile or result data leaves the browser, and the on-screen copy says so.
 

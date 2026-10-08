@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const KEYS = ["NODE_ENV", "JWT_SECRET", "DATABASE_URL", "OAUTH_SERVER_URL", "SKIP_ENV_VALIDATION"] as const;
+const KEYS = ["NODE_ENV", "JWT_SECRET", "DATABASE_URL", "OAUTH_SERVER_URL"] as const;
 const original = Object.fromEntries(KEYS.map((key) => [key, process.env[key]]));
 
 async function loadEnv(overrides: Partial<Record<(typeof KEYS)[number], string>>) {
@@ -24,14 +24,9 @@ describe("reportEnvStatus", () => {
     expect(() => reportEnvStatus()).not.toThrow();
   });
 
-  it("throws in production when JWT_SECRET is missing", async () => {
-    const { reportEnvStatus } = await loadEnv({ NODE_ENV: "production" });
-    expect(() => reportEnvStatus()).toThrow(/JWT_SECRET/);
-  });
-
-  it("downgrades to a warning when SKIP_ENV_VALIDATION=1", async () => {
+  it("warns in production when JWT_SECRET is missing", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const { reportEnvStatus } = await loadEnv({ NODE_ENV: "production", SKIP_ENV_VALIDATION: "1" });
+    const { reportEnvStatus } = await loadEnv({ NODE_ENV: "production" });
     expect(() => reportEnvStatus()).not.toThrow();
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("JWT_SECRET"));
   });

@@ -12,14 +12,14 @@ export const ENV = {
 };
 
 /**
- * Validates and reports production configuration at boot.
+ * Reports production configuration at boot.
  *
- * The SPA (CSSS/OPAM) runs without any environment variables, so missing
- * `DATABASE_URL` and `OAUTH_SERVER_URL` are warnings that disable the relevant
- * features. A missing `JWT_SECRET` is treated as fatal in production because
- * it would sign session cookies with an empty secret; set
- * `SKIP_ENV_VALIDATION=1` to downgrade it to a warning if you know what you
- * are doing.
+ * Every setting is optional: the SPA (CSSS/OPAM) and the pre-test lead form run
+ * without any environment variables. Missing values only disable the features
+ * that depend on them, so they are reported as warnings rather than aborting
+ * startup. In particular, a missing `JWT_SECRET` disables session cookies
+ * (admin/student login) but does not stop the API from serving public routes
+ * such as the lead-form submission.
  */
 export function reportEnvStatus(): void {
   if (!ENV.isProduction) return;
@@ -40,17 +40,10 @@ export function reportEnvStatus(): void {
       "LEAD_WEBHOOK_URL is not set — lead-form submissions (name/email/phone) will not be delivered."
     );
   }
-
   if (!ENV.cookieSecret) {
-    const message =
-      "JWT_SECRET is not set — session cookies would be signed with an insecure empty secret.";
-    if (process.env.SKIP_ENV_VALIDATION === "1") {
-      warnings.push(message);
-    } else {
-      throw new Error(
-        `[env] ${message} Set JWT_SECRET, or SKIP_ENV_VALIDATION=1 to bypass this check.`
-      );
-    }
+    warnings.push(
+      "JWT_SECRET is not set — session cookies would be signed with an insecure empty secret, so admin/student login is disabled."
+    );
   }
 
   for (const warning of warnings) {
