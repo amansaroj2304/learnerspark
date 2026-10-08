@@ -4,7 +4,7 @@ import { submitLead } from "../lib/leads";
 
 type Props = { testLabel: string; onClose: () => void; onProceed: () => void };
 
-const phonePattern = "[+]?[0-9\\s-]{10,17}";
+const phonePattern = "[+]?[0-9\\s\\-]{10,17}";
 
 export default function LeadForm({ testLabel, onClose, onProceed }: Props) {
   const [name, setName] = useState("");

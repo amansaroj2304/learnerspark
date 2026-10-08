@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import { eq, sql } from "drizzle-orm";
-import { authRateLimits } from "../drizzle/schema";
-import { getDb } from "./db";
+import { authRateLimits } from "../drizzle/schema.js";
+import { getDb } from "./db.js";
 
 const WINDOW = 15 * 60 * 1000;
 const LIMIT = 8;

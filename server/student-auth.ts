@@ -2,9 +2,9 @@ import { createHash, randomBytes, scrypt as rawScrypt, timingSafeEqual } from "n
 import { parse as parseCookie } from "cookie";
 import { and, eq, gt, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { assessmentAttempts, studentSessions, students, type Student } from "../drizzle/schema";
-import { getDb } from "./db";
-import type { TrpcContext } from "./_core/context";
+import { assessmentAttempts, studentSessions, students, type Student } from "../drizzle/schema.js";
+import { getDb } from "./db.js";
+import type { TrpcContext } from "./_core/context.js";
 
 const COOKIE = "lp_student";
 const SESSION_MS = 30 * 24 * 60 * 60 * 1000;

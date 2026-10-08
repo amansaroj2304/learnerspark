@@ -1,13 +1,13 @@
 import express, { type Express } from "express";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { registerOAuthRoutes } from "./oauth";
-import { registerStorageProxy } from "./storageProxy";
-import { appRouter } from "../routers";
-import { createContext } from "./context";
-import { reportEnvStatus } from "./env";
-import { securityHeaders } from "./security";
-import { createRateLimiter } from "./rate-limit";
-import { registerHealthRoutes } from "./health";
+import { registerOAuthRoutes } from "./oauth.js";
+import { registerStorageProxy } from "./storageProxy.js";
+import { appRouter } from "../routers.js";
+import { createContext } from "./context.js";
+import { reportEnvStatus } from "./env.js";
+import { securityHeaders } from "./security.js";
+import { createRateLimiter } from "./rate-limit.js";
+import { registerHealthRoutes } from "./health.js";
 
 /**
  * Builds the application's Express instance with every API route wired up.

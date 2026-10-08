@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { sql } from "drizzle-orm";
-import { getDb } from "../db";
+import { getDb } from "../db.js";
 
 /**
  * Liveness probe: the process is up and serving. Cheap, no dependencies.

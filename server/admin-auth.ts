@@ -1,9 +1,9 @@
 import { createHash, randomBytes } from "node:crypto";
 import { parse as parseCookie } from "cookie";
 import { and, eq, gt } from "drizzle-orm";
-import { adminAccounts, adminSessions } from "../drizzle/schema";
-import { getDb } from "./db";
-import type { TrpcContext } from "./_core/context";
+import { adminAccounts, adminSessions } from "../drizzle/schema.js";
+import { getDb } from "./db.js";
+import type { TrpcContext } from "./_core/context.js";
 
 const COOKIE = "lp_admin";
 const MAX_AGE = 12 * 60 * 60 * 1000;

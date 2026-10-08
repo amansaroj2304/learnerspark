@@ -1,12 +1,12 @@
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq, like, or, sql } from "drizzle-orm";
 import { z } from "zod";
-import { adminAccounts, assessmentAttempts, managedQuestions, managedTests, students } from "../../drizzle/schema";
-import { getDb } from "../db";
-import { publicProcedure, router } from "../_core/trpc";
-import { clearAdminSession, getAdminSession, issueAdminSession } from "../admin-auth";
-import { assertLoginAllowed, noteLoginFailure, resetLoginLimit } from "../auth-rate-limit";
-import { verifyPassword } from "../student-auth";
+import { adminAccounts, assessmentAttempts, managedQuestions, managedTests, students } from "../../drizzle/schema.js";
+import { getDb } from "../db.js";
+import { publicProcedure, router } from "../_core/trpc.js";
+import { clearAdminSession, getAdminSession, issueAdminSession } from "../admin-auth.js";
+import { assertLoginAllowed, noteLoginFailure, resetLoginLimit } from "../auth-rate-limit.js";
+import { verifyPassword } from "../student-auth.js";
 
 const adminOnly = publicProcedure.use(async ({ ctx, next }) => {
   const ownerOAuth = Boolean(process.env.OWNER_OPEN_ID && ctx.user?.openId === process.env.OWNER_OPEN_ID);

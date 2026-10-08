@@ -2,11 +2,11 @@ import { randomUUID } from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import { and, eq, or } from "drizzle-orm";
 import { z } from "zod";
-import { assessmentAttempts, students } from "../../drizzle/schema";
-import { getDb } from "../db";
-import { clearSession, getStudentSession, hashPassword, isValidMobile, issueSession, normalizeEmail, normalizeMobile, studentProfile, verifyPassword } from "../student-auth";
-import { publicProcedure, router } from "../_core/trpc";
-import { assertLoginAllowed, noteLoginFailure, resetLoginLimit } from "../auth-rate-limit";
+import { assessmentAttempts, students } from "../../drizzle/schema.js";
+import { getDb } from "../db.js";
+import { clearSession, getStudentSession, hashPassword, isValidMobile, issueSession, normalizeEmail, normalizeMobile, studentProfile, verifyPassword } from "../student-auth.js";
+import { publicProcedure, router } from "../_core/trpc.js";
+import { assertLoginAllowed, noteLoginFailure, resetLoginLimit } from "../auth-rate-limit.js";
 
 const registration = z.object({
   full_name: z.string().trim().min(2).max(120), email: z.string().email().max(320),

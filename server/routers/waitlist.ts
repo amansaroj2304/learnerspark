@@ -1,6 +1,6 @@
-import { leadInput, toLeadPayload } from "../../shared/leads";
-import { ENV } from "../_core/env";
-import { publicProcedure, router } from "../_core/trpc";
+import { leadInput, toLeadPayload } from "../../shared/leads.js";
+import { ENV } from "../_core/env.js";
+import { publicProcedure, router } from "../_core/trpc.js";
 
 const WEBHOOK_TIMEOUT_MS = 8_000;
 

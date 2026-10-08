@@ -10,7 +10,7 @@ let appPromise: Promise<Express> | null = null;
  */
 function loadApp(): Promise<Express> {
   if (!appPromise) {
-    appPromise = import("../server/_core/app")
+    appPromise = import("../server/_core/app.js")
       .then(({ createApp }) => createApp())
       .catch((error) => {
         appPromise = null;
