@@ -30,7 +30,11 @@ export default async function handler(
     node: process.version,
     tree: walk("/var/task"),
   };
-  const specs = ["../server/_core/app.js", "../server/_core/app", "../server/_core/app.ts"];
+  const specs = [
+    ["..", "server", "_core", "app.js"].join("/"),
+    ["..", "server", "_core", "app"].join("/"),
+    ["..", "server", "_core", "app.ts"].join("/"),
+  ];
   const imports: Record<string, string> = {};
   for (const spec of specs) {
     try {
