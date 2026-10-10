@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Clock3, Fingerprint, HeartHandshake, ShieldCheck, TimerReset } from "lucide-react";
-import { BackLink, ChoiceButton, Counter, PageShell, PrimaryButton, ProgressTrack, PrintLink, ReportMetric, RestartButton, SectionEyebrow, SiteFooter, SiteHeader, StatusChip, TrustMark } from "../components/SiteChrome";
+import { Award, Clock, ListChecks } from "lucide-react";
+import { ChoiceButton, Counter, PageShell, ProgressTrack, PrintLink, ReportMetric, RestartButton, SectionEyebrow, SiteFooter, SiteHeader, StatusChip, TrustMark } from "../components/SiteChrome";
 import StudentRegistration from "../components/StudentRegistration";
 import LeadForm from "../components/LeadForm";
+import { ExitConfirmDialog, TestInstructions } from "../components/TestInstructions";
 import { mixedOpamItems, opamBank, selfItems, OPAM_COUNTS, type OpamForcedItem, type OpamItem, type OpamSelfItem, type OpamSituationItem } from "../data/opamBank";
 import { isAccountServiceEnabled, recognizeStudent, saveAssessmentAttempt } from "../lib/student";
 import { isLeadFormEnabled } from "../lib/leads";
 
-type Screen = "landing" | "run" | "report";
+type Screen = "landing" | "briefing" | "run" | "report";
 type Answer = { itemId: string; type: OpamItem["type"]; value: string; latency: number; score: number };
 
 function typeLabel(type: OpamItem["type"]) {
@@ -75,6 +76,7 @@ function computeOlqSignals(answers: Answer[]) {
 
 export default function OPAM() {
   const [screen, setScreen] = useState<Screen>("landing");
+  const [seriesFilter, setSeriesFilter] = useState<"all" | "full" | "section">("all");
   const [index, setIndex] = useState(0);
   const [seconds, setSeconds] = useState(15);
   const [startedAt, setStartedAt] = useState(0);
@@ -82,7 +84,9 @@ export default function OPAM() {
   const [studentReady, setStudentReady] = useState(false);
   const [registrationOpen, setRegistrationOpen] = useState(false);
   const [leadOpen, setLeadOpen] = useState(false);
+  const [confirmExit, setConfirmExit] = useState(false);
   const answeringItemRef = useRef<string | null>(null);
+  const exitConfirmRef = useRef(false);
   const total = mixedOpamItems.length;
   const completed = answers.length;
   const item = mixedOpamItems[index];
@@ -105,6 +109,7 @@ export default function OPAM() {
     const timer = window.setInterval(
       () =>
         setSeconds((value) => {
+          if (exitConfirmRef.current) return value;
           if (value <= 1) {
             finishAnswer("timeout", 0);
             return 15;
@@ -116,11 +121,32 @@ export default function OPAM() {
     return () => window.clearInterval(timer);
   }, [screen, index]);
 
+  function beginBriefing() {
+    setScreen("briefing");
+  }
+
   function beginRun() {
     answeringItemRef.current = null;
     setScreen("run");
     setIndex(0);
     setAnswers([]);
+  }
+
+  function requestExit() {
+    exitConfirmRef.current = true;
+    setConfirmExit(true);
+  }
+
+  function cancelExit() {
+    exitConfirmRef.current = false;
+    setConfirmExit(false);
+  }
+
+  function confirmExitRun() {
+    exitConfirmRef.current = false;
+    setConfirmExit(false);
+    answeringItemRef.current = null;
+    setScreen("landing");
   }
 
   function start() {
@@ -132,7 +158,7 @@ export default function OPAM() {
       setLeadOpen(true);
       return;
     }
-    beginRun();
+    beginBriefing();
   }
 
   function finishAnswer(value: string, score = 1) {
@@ -148,66 +174,75 @@ export default function OPAM() {
   }
 
   if (screen === "landing") {
+    const seriesTests: { id: number; title: string; tags: [string, string]; questions: number; marks: number; minutes: number; unlocked: boolean; kind: "Full Test" | "Section Test" }[] = [
+      { id: 1, title: "OPAM 1", tags: ["Full Test", "Mixed Battery"], questions: total, marks: total, minutes: 30, unlocked: true, kind: "Full Test" },
+      { id: 2, title: "OPAM 2", tags: ["Section Test", "Self-Description"], questions: OPAM_COUNTS.self, marks: OPAM_COUNTS.self, minutes: 15, unlocked: false, kind: "Section Test" },
+      { id: 3, title: "OPAM 3", tags: ["Section Test", "Forced Choice"], questions: OPAM_COUNTS.forced, marks: OPAM_COUNTS.forced, minutes: 9, unlocked: false, kind: "Section Test" },
+      { id: 4, title: "OPAM 4", tags: ["Section Test", "Situation Reaction"], questions: OPAM_COUNTS.situation, marks: OPAM_COUNTS.situation, minutes: 6, unlocked: false, kind: "Section Test" },
+    ];
+    const filters: { key: "all" | "full" | "section"; label: string }[] = [
+      { key: "all", label: "All" },
+      { key: "full", label: "Full Tests" },
+      { key: "section", label: "Section Tests" },
+    ];
+    const visible = seriesTests.filter((test) => (seriesFilter === "all" ? true : seriesFilter === "full" ? test.kind === "Full Test" : test.kind === "Section Test"));
     return (
       <PageShell>
         <SiteHeader />
-        <main className="assessment-landing">
-          <div className="container assessment-landing-grid">
-            <div>
-              <BackLink />
-              <div className="assessment-kicker">
+        <main className="series-page opam-landing">
+          <div className="container series-grid">
+            <div className="series-main">
+              <div className="series-head">
                 <span className="assessment-badge orange">OPAM</span>
-                <span>PERSONALITY ASSESSMENT MODULE</span>
+                <span className="series-eyebrow">OFFICER POTENTIAL ASSESSMENT MODULE</span>
               </div>
-              <h1>
-                Answer as <em>you</em> are, not as an ideal officer.
-              </h1>
-              <p className="assessment-lead">
-                The full bank runs through 120 original prompts in a mixed sequence. Self-description, forced choice, and situation reaction items keep changing shape so you practise staying
-                consistent rather than memorising a rhythm.
-              </p>
-              <PrimaryButton onClick={start}>Start the assessment</PrimaryButton>
-              <p className="assessment-note">
-                <ShieldCheck size={14} />{" "}
-                {isAccountServiceEnabled ? "Your answers sync to your profile so results carry across attempts." : "Results are saved on this device only."}
-              </p>
-            </div>
-            <div className="assessment-spec">
-              <div className="spec-heading">
-                <Fingerprint size={21} />
-                <span>THE RUN / MIXED BANK</span>
+              <h1 className="series-title">All Tests <span>({seriesTests.length})</span></h1>
+              <p className="series-lead">A mixed {total}-prompt personality battery. Self-description, forced choice, and situation reaction items keep changing shape so you practise staying consistent rather than memorising a rhythm.</p>
+              <div className="series-tabs" role="tablist" aria-label="Filter tests">
+                {filters.map((tab) => (
+                  <button key={tab.key} type="button" role="tab" aria-selected={seriesFilter === tab.key} className={`series-tab ${seriesFilter === tab.key ? "is-active" : ""}`} onClick={() => setSeriesFilter(tab.key)}>{tab.label}</button>
+                ))}
               </div>
-              <div className="spec-number">120</div>
-              <p>
-                {OPAM_COUNTS.self} self-description · {OPAM_COUNTS.forced} forced choice · {OPAM_COUNTS.situation} situations
-              </p>
-              <div className="spec-list">
-                <div>
-                  <Clock3 size={16} />
-                  <span>15 sec soft timer per response</span>
-                </div>
-                <div>
-                  <TimerReset size={16} />
-                  <span>question shape changes throughout</span>
-                </div>
-                <div>
-                  <HeartHandshake size={16} />
-                  <span>answer honestly, not ideally</span>
-                </div>
-              </div>
-              <div className="spec-foot">
-                <span>NO BACK NAVIGATION</span>
-                <span>MIXED SEQUENCE</span>
+              <div className="series-list">
+                {visible.map((test) => (
+                  <article key={test.id} className={`series-card ${test.unlocked ? "" : "is-locked"}`}>
+                    <span className="series-index">TEST {String(test.id).padStart(2, "0")}</span>
+                    <div className="series-card-body">
+                      <h3>{test.title}</h3>
+                      <div className="series-tags">
+                        {test.tags.map((tag) => <span key={tag} className="series-tag">{tag}</span>)}
+                      </div>
+                      <div className="series-meta">
+                        <span><ListChecks size={14} />{test.questions} Questions</span>
+                        <span><Award size={14} />{test.marks} Marks</span>
+                        <span><Clock size={14} />{test.minutes} Mins</span>
+                      </div>
+                    </div>
+                    <div className="series-action">
+                      {test.unlocked ? <button type="button" className="series-start" onClick={start}>Start Test</button> : <button type="button" className="series-start is-locked" disabled>Unlock soon</button>}
+                      <span className="series-tier">{test.unlocked ? "Free" : "Premium"}</span>
+                    </div>
+                  </article>
+                ))}
               </div>
             </div>
+            <aside className="series-side">
+              <div className="series-total">
+                <span className="series-total-label">TOTAL TESTS</span>
+                <strong className="series-total-number">{seriesTests.length}</strong>
+                <div className="series-total-rows">
+                  <div><span>Full tests</span><strong>1</strong></div>
+                  <div><span>Section tests</span><strong>3</strong></div>
+                  <div><span>Free access</span><strong>1</strong></div>
+                </div>
+                <p className="series-total-note">Start with the full mixed run. Type-specific sets unlock soon.</p>
+              </div>
+            </aside>
           </div>
           <div className="container">
             <div className="assessment-legal">
               <strong>Read this first.</strong>
-              <span>
-                There are no “correct” personality answers in self-description or forced choice. Situation items use a best-fit response only to make the debrief actionable. This is original
-                practice content, not an official board instrument.
-              </span>
+              <span>There are no “correct” personality answers in self-description or forced choice. Situation items use a best-fit response only to make the debrief actionable. This is original practice content, not an official board instrument.</span>
             </div>
           </div>
         </main>
@@ -218,7 +253,7 @@ export default function OPAM() {
             onReady={() => {
               setStudentReady(true);
               setRegistrationOpen(false);
-              beginRun();
+              beginBriefing();
             }}
           />
         )}
@@ -228,11 +263,23 @@ export default function OPAM() {
             onClose={() => setLeadOpen(false)}
             onProceed={() => {
               setLeadOpen(false);
-              beginRun();
+              beginBriefing();
             }}
           />
         )}
       </PageShell>
+    );
+  }
+
+  if (screen === "briefing") {
+    return (
+      <TestInstructions
+        label="OPAM"
+        questions={total}
+        minutes={30}
+        onBegin={beginRun}
+        onBack={() => setScreen("landing")}
+      />
     );
   }
 
@@ -350,7 +397,7 @@ export default function OPAM() {
       <div className="assessment-shell">
         <header className="assessment-header">
           <div className="container assessment-header-inner">
-            <BackLink label="Exit run" />
+            <button type="button" className="back-link" onClick={requestExit}>← Exit run</button>
             <div className="assessment-header-brand">
               <span className="brand-mark">
                 <span />
@@ -444,6 +491,7 @@ export default function OPAM() {
           </div>
         </main>
       </div>
+      {confirmExit && <ExitConfirmDialog open={confirmExit} label="OPAM" onCancel={cancelExit} onConfirm={confirmExitRun} />}
     </PageShell>
   );
 }

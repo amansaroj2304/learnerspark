@@ -3,6 +3,8 @@ import type { QuestionVisual } from "../components/QuestionDiagram";
 
 export type CsssQuestion = { id: string; section: CsssSection; sectionLabel: string; subtype: string; duration: number; prompt: string; renderHint?: string; visual?: QuestionVisual; flashText?: string; audioText?: string; options: string[]; answer: number; explanation: string };
 type Row = [string, string[], number, string, string?, string?, QuestionVisual?];
+export type CsssRow = Row;
+export type CsssSetRows = { memory: CsssRow[]; spatial: CsssRow[]; pattern: CsssRow[]; language: CsssRow[]; audio: CsssRow[] };
 
 const memoryRows: Row[] = [
   ["A sequence flashes once: 4 · 9 · 2 · 7. Which number occupied position three?", ["2", "4", "7", "9"], 0, "The third position is 2.", "digit_recall"],
@@ -89,6 +91,15 @@ const build = (section: CsssSection, label: string, duration: number, rows: Row[
   const prompt = flashMatch ? flashMatch[2] : rawPrompt;
   return { id: `CSSS-${prefix}-${String(index + 1).padStart(2, "0")}`, section, sectionLabel: label, subtype: subtype ?? "standard", duration, prompt, options, answer, explanation, ...(flashMatch ? { flashText: flashMatch[1] } : {}), ...(audioText ? { audioText } : {}), ...(visual ? { visual } : {}) };
 });
+const SET_SECTIONS: { section: CsssSection; label: string; duration: number; code: string }[] = [
+  { section: "memory", label: "Working memory & selective attention", duration: 5, code: "A" },
+  { section: "spatial", label: "Spatial & form perception", duration: 12, code: "B" },
+  { section: "pattern", label: "Verbal + non-verbal reasoning", duration: 10, code: "C" },
+  { section: "language", label: "Linguistic ability", duration: 6, code: "D" },
+  { section: "audio", label: "Auditory discrimination", duration: 6, code: "E" },
+];
+export const buildCsssSet = (rows: CsssSetRows, prefix: string): CsssQuestion[] =>
+  SET_SECTIONS.flatMap(({ section, label, duration, code }) => build(section, label, duration, rows[section], `${prefix}${code}`));
 export const csssBank: CsssQuestion[] = [
   ...build("memory", "Working memory & selective attention", 5, memoryRows, "A"),
   ...build("spatial", "Spatial & form perception", 12, spatialRows, "B"),

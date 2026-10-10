@@ -1,0 +1,86 @@
+import { buildCsssSet, type CsssQuestion, type CsssRow, type CsssSetRows } from "../csssBank";
+
+// CSSS Set 3 — "Compass" · original practice content with heavier manipulation and logic variety.
+const memory: CsssRow[] = [
+  ["A sequence flashes once: 7 · 0 · 4 · 9. Which number occupied position three?", ["0", "4", "7", "9"], 1, "The third position is 4.", "digit_recall"],
+  ["A sequence flashes once: 2 · 8 · 5 · 1. Which number appeared at the end?", ["1", "2", "5", "8"], 0, "The last position is 1.", "digit_recall"],
+  ["A sequence flashes once: 6 · 3 · 9 · 7. Which number opened the sequence?", ["3", "6", "7", "9"], 1, "The first position is 6.", "digit_recall"],
+  ["A sequence flashes once: 1 · 5 · 2 · 8. Reverse the order. Which is correct?", ["8 · 2 · 5 · 1", "1 · 2 · 5 · 8", "8 · 5 · 2 · 1", "2 · 8 · 1 · 5"], 0, "Reversing the sequence gives 8 · 2 · 5 · 1.", "mental_manipulation"],
+  ["A sequence flashes once: 9 · 2 · 6. Double each value. Which sequence is correct?", ["18 · 4 · 12", "11 · 4 · 8", "18 · 2 · 12", "16 · 4 · 10"], 0, "Doubling each value gives 18 · 4 · 12.", "updating_memory"],
+  ["A sequence flashes once: tiger · eagle · shark · wolf. Which animal came immediately before shark?", ["Tiger", "Eagle", "Shark", "Wolf"], 1, "Eagle came immediately before shark.", "order_tracking"],
+  ["A sequence flashes once: 4 · 9 · 1 · 6. Which pair was adjacent in the original order?", ["9 · 1", "4 · 1", "6 · 9", "1 · 4"], 0, "The middle of the sequence holds adjacent 9 · 1.", "order_tracking"],
+  ["Ignore the ink colour and select the written word: YELLOW shown in blue ink.", ["RED", "BLUE", "GREEN", "YELLOW"], 3, "The target is the written word YELLOW.", "stroop_attention"],
+  ["A sequence flashes once: 3 · 6 · 0 · 8. Select the value in position two.", ["0", "3", "6", "8"], 2, "The second position is 6.", "digit_recall"],
+  ["A sequence flashes once: 5 · 7 · 2 · 4. Sum the first and last values. What is the total?", ["7", "9", "11", "12"], 1, "5 plus 4 equals 9.", "mental_manipulation"],
+  ["A sequence flashes once: 8 · 3 · 7 · 1. Recall the value in the third slot.", ["1", "3", "7", "8"], 2, "The third position is 7.", "digit_recall"],
+  ["Ignore the written word and select the ink colour: GREEN printed in red ink.", ["RED", "BLUE", "GREEN", "YELLOW"], 0, "The target is the ink colour, which is red.", "stroop_attention"],
+  ["A sequence flashes once: 0 · 9 · 4 · 6. Select the final value.", ["0", "4", "6", "9"], 2, "The last position is 6.", "digit_recall"],
+  ["A sequence flashes once: 2 · 4 · 7. Add three to each value. Which sequence is correct?", ["5 · 7 · 10", "4 · 6 · 9", "5 · 6 · 10", "6 · 8 · 11"], 0, "Adding three to each value gives 5 · 7 · 10.", "updating_memory"],
+  ["A sequence flashes once: mango · guava · apple · plum. Which fruit was in position three?", ["Mango", "Guava", "Apple", "Plum"], 2, "Apple was the third fruit.", "order_tracking"],
+];
+const spatial: CsssRow[] = [
+  ["Study the diagram. A horizontal mirror flips the bottom-left mark. Where will the mark appear?", ["Top-left", "Top-right", "Bottom-left", "Bottom-right"], 3, "A horizontal flip mirrors left to right.", "mirror_grid", undefined, "mirror_horizontal"],
+  ["Study the diagram above the water line. A mark sits bottom-left of the figure. Where is it in the water reflection?", ["Top-left", "Top-right", "Bottom-left", "Bottom-right"], 0, "A water reflection flips the figure vertically, keeping left and right.", "water_reflection", undefined, "water_reflection"],
+  ["Study the rotation diagram. A square turns 180°. Which edge receives the top mark?", ["Left", "Right", "Top", "Bottom"], 3, "A half-turn moves the top edge to the bottom.", "rotation", undefined, "rotation"],
+  ["Follow the illustrated route: east, north, west by the same distance. Where are you from the start?", ["North", "East", "South", "At the start"], 0, "East and west cancel, leaving north.", "coordinate_path", undefined, "path"],
+  ["Study the cube diagram. It rolls to the right once. Where does the top dot move?", ["Left face", "Right face", "Bottom", "It stays on top"], 1, "Rolling right carries the top face onto the right face.", "cube_rotation", undefined, "cube"],
+  ["Use the compass diagram. You face west, turn right, then right again. Which way do you face?", ["North", "South", "East", "West"], 2, "Two right turns from west lead to east.", "direction", undefined, "direction"],
+  ["Study the four-cell diagram. The mark starts bottom-left and the grid rotates 90° anticlockwise. Where is it?", ["Top-right", "Top-left", "Bottom-right", "Bottom-left"], 2, "Bottom-left rotates anticlockwise to bottom-right.", "grid_rotation", undefined, "grid_rotation"],
+  ["Study the line and mirror axis. A line slopes down to the right. After a horizontal mirror, how does it slope?", ["Down to the right", "Up to the right", "It becomes vertical", "It disappears"], 1, "A horizontal reflection reverses the vertical direction of the slope.", "mirror_line", undefined, "line_mirror"],
+  ["Study the arrow diagram. The left-pointing arrow rotates 90° clockwise. Which way does it point?", ["Right", "Left", "Up", "Down"], 2, "Left rotated clockwise points up.", "arrow_rotation", undefined, "arrow_rotation"],
+  ["Use the coordinate diagram. A marker moves two cells south and two cells west from centre. Where is it?", ["Upper-left", "Upper-right", "Lower-left", "Lower-right"], 2, "South is down and west is left.", "coordinate_path", undefined, "coordinate"],
+  ["Study the vertical mirror axis. A diagonal line rises to the right. After reflection, which way does it rise?", ["To the right", "To the left", "It becomes horizontal", "It vanishes"], 1, "A vertical mirror reverses left and right.", "mirror_line", undefined, "line_mirror"],
+  ["Follow the illustrated path: north two steps, then east two steps, then south two steps. Where do you end?", ["Two east of start", "Two north of start", "Two west of start", "At the start"], 0, "North and south cancel, leaving two steps east.", "coordinate_path", undefined, "coordinate"],
+  ["Study the triangle diagram. Its shaded corner starts top-right and is flipped horizontally. Where does it move?", ["Top-left", "Top-right", "Bottom-left", "Bottom-right"], 0, "A horizontal flip mirrors the corner to top-left.", "mirror_grid", undefined, "mirror_horizontal"],
+  ["Study the square mark. It starts top-left and rotates 90° clockwise. Where does it go?", ["Top-left", "Top-right", "Bottom-left", "Bottom-right"], 1, "A clockwise quarter turn maps top-left to top-right.", "rotation", undefined, "rotation"],
+  ["Follow the illustrated path from centre to 12 o'clock and then to 6 o'clock through the centre. What shape does it trace?", ["A right angle", "A straight line", "A circle", "No path"], 1, "The two opposite moves lie on one straight line.", "coordinate_path", undefined, "path"],
+];
+const pattern: CsssRow[] = [
+  ["Sequence: 2, 6, 18, 54, __. Which value comes next?", ["108", "126", "162", "216"], 2, "Each term is multiplied by 3.", "number_series_multiplication"],
+  ["Sequence: 11, 17, 23, 29, __. Which value completes it?", ["33", "35", "37", "39"], 1, "The series increases by 6.", "number_series_constant_step"],
+  ["Sequence: 3, 4, 7, 12, 19, __. Which value follows the pattern?", ["24", "26", "28", "30"], 2, "The increases are +1, +3, +5, +7, then +9.", "number_series_odd_steps"],
+  ["Sequence: 125, 25, 5, 1, __. Which value is missing?", ["0", "0.2", "0.5", "5"], 1, "Each term is divided by 5, giving one fifth.", "number_series_division"],
+  ["Sequence: 2, 5, 10, 17, 26, __. Which value comes next?", ["35", "36", "37", "38"], 2, "Each term is one more than a square: 37 = 36 + 1.", "number_series_squares"],
+  ["Sequence: 5, 6, 9, 14, 21, __. Which value completes the growing gaps?", ["28", "29", "30", "32"], 2, "The increases are +1, +3, +5, +7, then +9.", "number_series_growing_gaps"],
+  ["Sequence: 10, 1, 20, 2, 30, 3, __. Which value belongs next?", ["4", "40", "33", "31"], 1, "Odd positions count by tens.", "alternating_series"],
+  ["Letters: Z, X, U, Q, __. Which letter follows the increasing backward gaps?", ["M", "L", "N", "O"], 1, "The gaps are −2, −3, −4, then −5, landing on L.", "letter_series"],
+  ["Sequence: 88, 80, 64, 40, __. Which value is missing?", ["16", "8", "24", "0"], 1, "The subtractions grow by 8: 40 − 32 = 8.", "number_series_decreasing"],
+  ["Relationship: 6 is to 18 as __ is to __. Which pair preserves the same relationship?", ["7 : 20", "8 : 24", "9 : 29", "10 : 32"], 1, "The relationship is ×3.", "analogy_numbers"],
+  ["Coding rule: each letter moves one place backward. What does JET become?", ["IDS", "KFU", "IES", "HDS"], 0, "J→I, E→D, T→S gives IDS.", "coding_decoding"],
+  ["Study the visual diagram: ● ○ ● __. Which tile continues the alternating pattern?", ["○", "●", "○ ●", "● ●"], 0, "The alternation continues with a hollow circle.", "nonverbal_grid", undefined, "nonverbal_grid"],
+  ["Study the triangle in the diagram. After a 180° turn, which option matches?", ["▲", "▶", "▼", "◀"], 2, "The shape rotates half a turn to point down.", "nonverbal_rotation", undefined, "nonverbal_rotation"],
+  ["Study the figure and the vertical mirror line. The row reads ◆ · ◆ · ○. Which option is the left-right mirror?", ["◆ · ◆ · ○", "○ · ◆ · ◆", "◆ · ○ · ◆", "○ · ○ · ◆"], 1, "The mirror reverses the order of the three symbols.", "nonverbal_mirror", undefined, "nonverbal_mirror"],
+  ["Study the figure above the water line: ◆ left of ○. Which option shows the correct water reflection?", ["○ left of ◆, flipped vertically", "◆ left of ○, flipped vertically", "◆ right of ○, unchanged", "○ above ◆"], 1, "A water reflection flips vertically while preserving left and right.", "nonverbal_water", undefined, "nonverbal_water"],
+];
+const language: CsssRow[] = [
+  ["Closest meaning of ‘feasible’ in ‘a feasible plan’:", ["Impossible", "Achievable", "Expensive", "Secret"], 1, "Feasible means possible to carry out.", "vocabulary_synonym"],
+  ["Opposite of ‘transparent’:", ["Clear", "Opaque", "Fragile", "Bright"], 1, "Opaque means not able to be seen through.", "vocabulary_antonym"],
+  ["Complete: The briefing was short but ___.", ["thorough", "hollow", "absent", "noisy"], 0, "Thorough fits a briefing that covers everything needed.", "contextual_completion"],
+  ["Closest meaning of ‘prudent’:", ["Careless", "Wise and careful", "Proud", "Rapid"], 1, "Prudent means acting with care and thought.", "vocabulary_synonym"],
+  ["Which word is different: hammer, wrench, screwdriver, nail?", ["hammer", "wrench", "screwdriver", "nail"], 3, "A nail is a fastener; the others are tools.", "odd_one_out"],
+  ["Best synonym for ‘vital’:", ["Essential", "Optional", "Violent", "Verbal"], 0, "Vital means absolutely necessary.", "vocabulary_synonym"],
+  ["A plan that can change when conditions change is ___.", ["flexible", "frozen", "fragile", "formal"], 0, "Flexible means able to adapt.", "contextual_completion"],
+  ["Opposite of ‘assemble’:", ["Build", "Disperse", "Collect", "Repair"], 1, "Disperse means to scatter apart.", "vocabulary_antonym"],
+  ["Which sentence is clearest?", ["The drill postponed was rain because of.", "Because of rain, the drill was postponed.", "Rain the drill because postponed of.", "Postponed because the drill rain."], 1, "The second sentence is complete and direct.", "sentence_clarity"],
+  ["Closest meaning of ‘tenacious’:", ["Giving up easily", "Holding on firmly", "Moving slowly", "Speaking loudly"], 1, "Tenacious means persistent and determined.", "vocabulary_synonym"],
+  ["An answer supported by evidence is ___.", ["substantiated", "scattered", "superficial", "sudden"], 0, "Substantiated means backed by proof.", "contextual_completion"],
+  ["Which word does not fit: honest, sincere, truthful, deceptive?", ["honest", "sincere", "truthful", "deceptive"], 3, "Deceptive contrasts with the other three.", "odd_one_out"],
+  ["The patrol kept a ___ pace to save energy for the climb.", ["steady", "frantic", "jagged", "hidden"], 0, "Steady fits a pace that conserves energy.", "contextual_completion"],
+  ["Best meaning of ‘improvise’:", ["Act using what is available", "Follow a script exactly", "Refuse to act", "Repeat an old method"], 0, "To improvise is to create a response from what is at hand.", "vocabulary_definition"],
+  ["Map is to navigation as recipe is to…", ["cooking", "eating", "shopping", "serving"], 0, "A recipe guides cooking as a map guides navigation.", "verbal_analogy"],
+];
+const audio: CsssRow[] = [
+  ["Listen once, then select the number sequence you heard.", ["9–2–5–7–1", "9–5–2–7–1", "2–9–5–1–7", "9–2–7–5–1"], 0, "The correct response preserves the five-number order.", "digit_recall_audio", "9 2 5 7 1"],
+  ["Listen once, then select the word order you heard.", ["bravo echo delta alpha", "bravo delta echo alpha", "echo bravo delta alpha", "bravo echo alpha delta"], 0, "The correct response preserves the spoken word order.", "word_order_audio", "bravo echo delta alpha"],
+  ["Listen once, then select the letter order you heard.", ["M N B V", "M B N V", "N M B V", "M N V B"], 0, "The correct response preserves the spoken letter order.", "letter_order_audio", "M N B V"],
+  ["Listen once, then identify the direction heard in the second position.", ["North", "South", "East", "West"], 3, "West was the second direction in the audio cue.", "direction_tracking_audio", "south west north east"],
+  ["Listen once, then count how many times the word ‘lamp’ was heard.", ["1", "2", "3", "4"], 1, "The target word was spoken twice.", "category_count_audio", "lamp torch candle lamp torch"],
+  ["Listen once, then select the pattern of the spoken parity labels.", ["Odd–Odd–Even–Odd–Even", "Even–Odd–Odd–Even–Even", "Odd–Even–Even–Even–Odd", "Even–Even–Odd–Even–Odd"], 0, "The spoken labels follow the first option's pattern.", "parity_pattern_audio", "odd odd even odd even"],
+  ["Listen once, then select the action requested by the spoken instruction.", ["Circle the square", "Cross the square", "Underline the circle", "Mark the triangle"], 1, "The instruction asks for the square to be crossed.", "instruction_following_audio", "cross the square"],
+  ["Listen once, then decide whether the two spoken pairs are the same or different.", ["Same order", "Different words", "Same words, reversed", "One word missing"], 1, "The second pair swaps one word for a different one.", "same_different_audio", "black gold; black silver"],
+  ["Listen once, then select the month heard in the third position.", ["March", "June", "April", "August"], 2, "April was heard third.", "day_order_audio", "march june april august"],
+  ["Listen once, then identify which word was repeated most often.", ["Signal", "Single", "Simple", "Symbol"], 0, "Signal was repeated more often than the distractor words.", "word_discrimination_audio", "signal simple signal single signal"],
+];
+
+const rows: CsssSetRows = { memory, spatial, pattern, language, audio };
+export const csssSet3: CsssQuestion[] = buildCsssSet(rows, "S3");

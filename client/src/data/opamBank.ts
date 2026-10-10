@@ -7,6 +7,86 @@ export type OpamSituationOption = { text: string; style: "responsible" | "avoida
 export type OpamSituationItem = { id: string; type: "situation"; text: string; options: string[]; optionMeta: OpamSituationOption[]; best: number };
 export type OpamItem = OpamSelfItem | OpamForcedItem | OpamSituationItem;
 
+export type OpamSelfSeed = [OlqCode, string, [string, string, string, string]];
+export type OpamForcedSeed = [string, string, string, OlqCode, OlqCode];
+export type OpamSituationSeed = { text: string; options: OpamSituationOption[]; best: number };
+export type OpamSetContent = { olqs: OpamSelfSeed[]; forcedSeeds: OpamForcedSeed[]; situationSeeds: OpamSituationSeed[] };
+export type OpamSet = {
+  selfItems: OpamSelfItem[];
+  forcedItems: OpamForcedItem[];
+  situationItems: OpamSituationItem[];
+  opamBank: OpamItem[];
+  mixedOpamItems: OpamItem[];
+  counts: { self: number; forced: number; situation: number };
+  total: number;
+};
+
+/**
+ * Builds a complete OPAM personality set from raw seed content. The run order is
+ * mixed so candidates repeatedly switch between self-description, forced-choice
+ * trade-offs, and practical situation reactions.
+ */
+export function buildOpamSet(content: OpamSetContent, setTag = ""): OpamSet {
+  const selfItems: OpamSelfItem[] = content.olqs.flatMap(([olq, trait, texts], groupIndex) =>
+    texts.map((text, itemIndex) => ({
+      id: `OP${setTag}1-${String(groupIndex * 4 + itemIndex + 1).padStart(3, "0")}`,
+      type: "self",
+      trait,
+      olq,
+      text,
+      keyed: itemIndex === 2 && groupIndex % 3 === 0 ? "negative" : "positive",
+      pairId: groupIndex < 5 ? `P${groupIndex + 1}` : null,
+      socialDesirabilityFlag: itemIndex === 3 && ["SOR", "COUR", "STA"].includes(olq),
+    })),
+  );
+
+  const forcedItems: OpamForcedItem[] = content.forcedSeeds.map(([pairKey, left, right, leftOlq, rightOlq], index) => ({
+    id: `OP${setTag}2-${String(index + 1).padStart(3, "0")}`,
+    type: "forced",
+    pairKey,
+    left,
+    right,
+    leftOlq,
+    rightOlq,
+  }));
+
+  const situationItems: OpamSituationItem[] = content.situationSeeds.map((seed, index) => {
+    const shift = index % seed.options.length;
+    const optionMeta = seed.options.map((_, position) => seed.options[(position + shift) % seed.options.length]);
+    return {
+      id: `OP${setTag}3-${String(index + 1).padStart(3, "0")}`,
+      type: "situation",
+      text: seed.text,
+      options: optionMeta.map((option) => option.text),
+      optionMeta,
+      best: (seed.best + seed.options.length - shift) % seed.options.length,
+    };
+  });
+
+  const opamBank: OpamItem[] = [...selfItems, ...forcedItems, ...situationItems];
+  const total = opamBank.length;
+  const counts = { self: selfItems.length, forced: forcedItems.length, situation: situationItems.length };
+
+  const mixedOpamItems: OpamItem[] = (() => {
+    const pools: Record<OpamItem["type"], OpamItem[]> = { self: [...selfItems], forced: [...forcedItems], situation: [...situationItems] };
+    const totals: Record<OpamItem["type"], number> = { self: selfItems.length, forced: forcedItems.length, situation: situationItems.length };
+    const used: Record<OpamItem["type"], number> = { self: 0, forced: 0, situation: 0 };
+    const sequence: OpamItem[] = [];
+    let previous: OpamItem["type"] | null = null;
+    while (sequence.length < total) {
+      const available = (Object.keys(pools) as OpamItem["type"][]).filter((type) => pools[type].length > 0 && type !== previous);
+      const nextType = available.sort((left, right) => used[left] / totals[left] - used[right] / totals[right])[0] ?? (Object.keys(pools) as OpamItem["type"][]).find((type) => pools[type].length > 0);
+      if (!nextType) break;
+      sequence.push(pools[nextType].shift() as OpamItem);
+      used[nextType] += 1;
+      previous = nextType;
+    }
+    return sequence;
+  })();
+
+  return { selfItems, forcedItems, situationItems, opamBank, mixedOpamItems, counts, total };
+}
+
 const olqs: Array<[OlqCode, string, [string, string, string, string]]> = [
   ["ORG", "Planning & organising", ["I break a large task into clear steps before starting.", "I keep the materials for a shared task where others can find them.", "I check which detail must be done first when time is short.", "I leave room in a plan for a change in conditions."]],
   ["REA", "Reasoning ability", ["I separate what I know from what I am assuming.", "I compare two explanations before choosing one.", "I change my view when a better reason appears.", "I look for the rule behind a problem instead of copying a solution."]],
@@ -25,13 +105,9 @@ const olqs: Array<[OlqCode, string, [string, string, string, string]]> = [
   ["STA", "Stamina", ["I keep my attention steady through a repetitive session.", "I manage energy so my work does not collapse late in the day.", "I can continue careful decisions after an early setback.", "I maintain effort without needing constant encouragement."]],
 ];
 
-export const selfItems: OpamSelfItem[] = olqs.flatMap(([olq, trait, texts], groupIndex) => texts.map((text, itemIndex) => ({ id: `OP1-${String(groupIndex * 4 + itemIndex + 1).padStart(3, "0")}`, type: "self", trait, olq, text, keyed: itemIndex === 2 && groupIndex % 3 === 0 ? "negative" : "positive", pairId: groupIndex < 5 ? `P${groupIndex + 1}` : null, socialDesirabilityFlag: itemIndex === 3 && ["SOR", "COUR", "STA"].includes(olq) })));
-
 const forcedSeeds: Array<[string, string, string, OlqCode, OlqCode]> = [
   ["F01", "I make a clear plan before beginning.", "I adapt quickly once I begin.", "ORG", "SAD"], ["F02", "I ask a useful question when a group is stuck.", "I offer a practical first move when a group is stuck.", "PEX", "INI"], ["F03", "I protect details that affect others.", "I take the lead when details are unclear.", "SOR", "INF"], ["F04", "I resolve tension early.", "I preserve momentum and return to tension later.", "COO", "DET"], ["F05", "I prefer direct feedback.", "I prefer time to reflect on feedback.", "SCO", "REA"], ["F06", "I choose the safer option when error is costly.", "I choose the bolder option when learning is valuable.", "SOR", "COUR"], ["F07", "I speak early to put an idea on the table.", "I listen longer so my contribution fits.", "INI", "SAD"], ["F08", "I keep a steady pace from the start.", "I use a strong final push to close.", "STA", "DET"], ["F09", "I decide when the group needs direction.", "I help the group reach its own decision.", "SDE", "COO"], ["F10", "I practise a weak area repeatedly.", "I explore a new area to broaden my range.", "DET", "REA"], ["F11", "I simplify a task when pressure rises.", "I increase pace when pressure rises.", "REA", "STA"], ["F12", "I own the part I controlled.", "I examine the wider system behind the outcome.", "SOR", "ORG"], ["F13", "I explain the main point first.", "I use an example before stating the main point.", "PEX", "INF"], ["F14", "I arrange people around clear roles.", "I keep roles flexible as the task changes.", "OOA", "SAD"], ["F15", "I raise a concern early.", "I wait until I have a complete alternative.", "COUR", "REA"], ["F16", "I keep the group’s mood steady.", "I keep the group’s standard high.", "LIV", "DET"], ["F17", "I check the instruction twice.", "I begin and clarify as I go.", "ORG", "INI"], ["F18", "I make room for a quiet voice.", "I ask the strongest speaker to summarise.", "SAD", "INF"], ["F19", "I repair a missed detail quietly.", "I tell the group what caused the missed detail.", "SOR", "PEX"], ["F20", "I decide with the facts available.", "I wait for one more piece of evidence.", "SDE", "REA"], ["F21", "I use a simple routine on a tiring day.", "I change the routine to regain energy.", "STA", "SAD"], ["F22", "I keep my own view in a disagreement.", "I look for the part of the other view that helps.", "SCO", "COO"], ["F23", "I turn a suggestion into a first experiment.", "I ask how the suggestion will affect the plan.", "INI", "ORG"], ["F24", "I make a direct request.", "I show the practical reason for the request.", "PEX", "INF"], ["F25", "I stay with the task after a poor start.", "I change the method after a poor start.", "DET", "REA"], ["F26", "I take a visible role in an unfamiliar group.", "I observe the group before taking a role.", "SCO", "SAD"], ["F27", "I use a checklist for a shared handover.", "I speak to the next person about the handover.", "ORG", "PEX"], ["F28", "I invite agreement around a common aim.", "I make the strongest case for my proposal.", "COO", "INF"], ["F29", "I keep my answer short under time pressure.", "I add context so the answer cannot be misunderstood.", "PEX", "REA"], ["F30", "I take the first safe action.", "I ask who should take the first action.", "SDE", "SOR"], ["F31", "I keep attention on a long routine.", "I add variety to keep attention fresh.", "STA", "LIV"], ["F32", "I admit what I do not know.", "I reason aloud from what I do know.", "COUR", "REA"], ["F33", "I set a clear next deadline.", "I check whether the deadline is realistic.", "OOA", "ORG"], ["F34", "I encourage a hesitant teammate to try.", "I take the difficult part first to demonstrate.", "INF", "INI"], ["F35", "I keep a calm tone when challenged.", "I state the boundary clearly when challenged.", "COO", "SCO"],
 ];
-export const forcedItems: OpamForcedItem[] = forcedSeeds.map(([pairKey, left, right, leftOlq, rightOlq], index) => ({ id: `OP2-${String(index + 1).padStart(3, "0")}`, type: "forced", pairKey, left, right, leftOlq, rightOlq }));
-
 const situationSeeds: Array<{ text: string; options: OpamSituationOption[]; best: number }> = [
   { text: "At a college sports ground in Pune, your group has ten minutes left and two members are speaking over each other. What do you do?", options: [{ text: "Summarise the shared point, suggest a next step, and invite one quieter voice.", style: "responsible", olq: "INF" }, { text: "Wait silently because interrupting would be uncomfortable.", style: "avoidant", olq: "SCO" }, { text: "Take over the whole discussion so the group cannot lose time.", style: "impulsive", olq: "COUR" }, { text: "Ask the coach to decide the plan for the group.", style: "dependent", olq: "SOR" }], best: 0 },
   { text: "Your hostel study group in Lucknow is handing over notes before a test. One page is missing. What is your response?", options: [{ text: "Check the index, tell the group what is missing, and find a quick substitute.", style: "responsible", olq: "SOR" }, { text: "Say nothing and hope the missing page is not needed.", style: "avoidant", olq: "SOR" }, { text: "Leave the hostel immediately to search for the person who lost it.", style: "impulsive", olq: "COUR" }, { text: "Wait for the senior student to arrange everything.", style: "dependent", olq: "INI" }], best: 0 },
@@ -59,31 +135,8 @@ const situationSeeds: Array<{ text: string; options: OpamSituationOption[]; best
   { text: "At a college lab in Kanpur, the person scheduled to record readings is absent and the session has started. What do you do?", options: [{ text: "Confirm the method, assign the recording role, and begin with a clear log.", style: "responsible", olq: "OOA" }, { text: "Skip the readings and write them later from memory.", style: "avoidant", olq: "SOR" }, { text: "Start changing the experiment without checking the method.", style: "impulsive", olq: "INI" }, { text: "Wait for the absent student to return before doing anything.", style: "dependent", olq: "INI" }], best: 0 },
   { text: "At a neighbourhood clean-up in Madurai, the bags are full before the last lane is checked. What is the best next step?", options: [{ text: "Inform the coordinator, move the full bags safely, and agree on the remaining area.", style: "responsible", olq: "ORG" }, { text: "Leave the remaining lane because the planned time is over.", style: "avoidant", olq: "DET" }, { text: "Carry overloaded bags alone through the crowd.", style: "impulsive", olq: "COUR" }, { text: "Wait for the coordinator to notice the bags.", style: "dependent", olq: "SOR" }], best: 0 },
 ];
-export const situationItems: OpamSituationItem[] = situationSeeds.map((seed, index) => {
-  const shift = index % seed.options.length;
-  const optionMeta = seed.options.map((_, position) => seed.options[(position + shift) % seed.options.length]);
-  return { id: `OP3-${String(index + 1).padStart(3, "0")}`, type: "situation", text: seed.text, options: optionMeta.map((option) => option.text), optionMeta, best: (seed.best + seed.options.length - shift) % seed.options.length };
-});
-export const opamBank: OpamItem[] = [...selfItems, ...forcedItems, ...situationItems];
-export const OPAM_TOTAL = opamBank.length;
-export const OPAM_COUNTS = { self: selfItems.length, forced: forcedItems.length, situation: situationItems.length };
+export const opamSet1 = buildOpamSet({ olqs, forcedSeeds, situationSeeds });
 
-// The bank is stored by module for reporting and validation, but the live run uses
-// a mixed sequence so candidates repeatedly switch between self-description,
-// forced-choice trade-offs, and practical situation reactions.
-export const mixedOpamItems: OpamItem[] = (() => {
-  const pools: Record<OpamItem["type"], OpamItem[]> = { self: [...selfItems], forced: [...forcedItems], situation: [...situationItems] };
-  const totals: Record<OpamItem["type"], number> = { self: selfItems.length, forced: forcedItems.length, situation: situationItems.length };
-  const used: Record<OpamItem["type"], number> = { self: 0, forced: 0, situation: 0 };
-  const sequence: OpamItem[] = [];
-  let previous: OpamItem["type"] | null = null;
-  while (sequence.length < OPAM_TOTAL) {
-    const available = (Object.keys(pools) as OpamItem["type"][]).filter((type) => pools[type].length > 0 && type !== previous);
-    const nextType = available.sort((left, right) => used[left] / totals[left] - used[right] / totals[right])[0] ?? (Object.keys(pools) as OpamItem["type"][]).find((type) => pools[type].length > 0);
-    if (!nextType) break;
-    sequence.push(pools[nextType].shift() as OpamItem);
-    used[nextType] += 1;
-    previous = nextType;
-  }
-  return sequence;
-})();
+export const { selfItems, forcedItems, situationItems, opamBank, mixedOpamItems } = opamSet1;
+export const OPAM_COUNTS = opamSet1.counts;
+export const OPAM_TOTAL = opamSet1.total;
