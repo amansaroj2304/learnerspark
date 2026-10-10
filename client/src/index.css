@@ -405,6 +405,13 @@ h3 { font-size: 1.12rem; line-height: 1.15; font-weight: 600; }
 .series-total-note { margin-top: 20px; color: rgba(232,224,206,.52); font-size: .72rem; line-height: 1.5; }
 
 .upcoming-page { min-height: 600px; max-width: 850px; padding: 100px 24px 130px; margin: 0 auto; }
+.bank-select { margin-bottom: 18px; }
+.bank-select-label { display: block; font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-steel); margin-bottom: 8px; }
+.bank-select-options { display: flex; gap: 10px; }
+.bank-select-options button { flex: 1; padding: 10px 14px; border: 2px solid var(--color-line); background: var(--color-card); border-radius: 10px; cursor: pointer; text-align: left; transition: border-color 0.2s ease, background 0.2s ease; }
+.bank-select-options button strong { display: block; font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--color-ink); }
+.bank-select-options button small { display: block; font-size: 11px; color: var(--color-steel); margin-top: 2px; }
+.bank-select-options button.active { border-color: var(--color-olive); background: var(--color-parchment); }
 .upcoming-page h1 { margin-top: 18px; color: var(--olive-dark); }
 .upcoming-page > p { max-width: 610px; margin-top: 21px; color: var(--steel); font-size: 1rem; }
 .upcoming-card { max-width: 620px; margin-top: 45px; padding: 27px; border: 1px solid var(--line); background: var(--sand-pale); }
