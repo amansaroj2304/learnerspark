@@ -4,6 +4,7 @@ import { BackLink, ChoiceButton, Counter, PageShell, PrimaryButton, ProgressTrac
 import StudentRegistration from "../components/StudentRegistration";
 import LeadForm from "../components/LeadForm";
 import { mixedOpamItems, opamBank, selfItems, OPAM_COUNTS, type OpamForcedItem, type OpamItem, type OpamSelfItem, type OpamSituationItem } from "../data/opamBank";
+import { mixedOpamItems as mixedOpamItems2, opamBank as opamBank2, selfItems as selfItems2, OPAM_COUNTS as OPAM_COUNTS2 } from "../data/opamBank2";
 import { isAccountServiceEnabled, recognizeStudent, saveAssessmentAttempt } from "../lib/student";
 import { isLeadFormEnabled } from "../lib/leads";
 
@@ -25,9 +26,11 @@ function itemPrompt(item: OpamItem) {
 const traitLabel: Record<string, string> = (() => {
   const map: Record<string, string> = {};
   for (const item of selfItems) map[item.olq] = item.trait;
+  for (const item of selfItems2) map[item.olq] = item.trait;
   return map;
 })();
-const itemById = new Map(opamBank.map((item) => [item.id, item]));
+const itemByIdA = new Map(opamBank.map((item) => [item.id, item]));
+const itemByIdB = new Map(opamBank2.map((item) => [item.id, item]));
 
 /**
  * Builds a per-OLQ signal strictly from what the learner actually chose:
@@ -46,7 +49,7 @@ function computeOlqSignals(answers: Answer[]) {
   };
 
   for (const answer of answers) {
-    const item = itemById.get(answer.itemId);
+    const item = (bank === "A" ? itemByIdA : itemByIdB).get(answer.itemId);
     if (!item) continue;
     if (item.type === "self") {
       const matchesKey = (answer.value === "agree") === (item.keyed === "positive");
@@ -75,6 +78,7 @@ function computeOlqSignals(answers: Answer[]) {
 
 export default function OPAM() {
   const [screen, setScreen] = useState<Screen>("landing");
+  const [bank, setBank] = useState<"A" | "B">("A");
   const [index, setIndex] = useState(0);
   const [seconds, setSeconds] = useState(15);
   const [startedAt, setStartedAt] = useState(0);
@@ -83,9 +87,13 @@ export default function OPAM() {
   const [registrationOpen, setRegistrationOpen] = useState(false);
   const [leadOpen, setLeadOpen] = useState(false);
   const answeringItemRef = useRef<string | null>(null);
-  const total = mixedOpamItems.length;
+  const activeMixedItems = bank === "A" ? mixedOpamItems : mixedOpamItems2;
+  const activeOpamBank = bank === "A" ? opamBank : opamBank2;
+  const activeSelfItems = bank === "A" ? selfItems : selfItems2;
+  const activeCounts = bank === "A" ? OPAM_COUNTS : OPAM_COUNTS2;
+  const total = activeMixedItems.length;
   const completed = answers.length;
-  const item = mixedOpamItems[index];
+  const item = activeMixedItems[index];
   const progress = (completed / total) * 100;
   const currentGlobal = index + 1;
   const answeredByType = answers.reduce((counts, answer) => ({ ...counts, [answer.type]: counts[answer.type] + 1 }), { self: 0, forced: 0, situation: 0 });
@@ -141,7 +149,7 @@ export default function OPAM() {
     const nextAnswers = [...answers, { itemId: item.id, type: item.type, value, latency: Math.round(performance.now() - startedAt), score }];
     setAnswers(nextAnswers);
     if (index < total - 1) return setIndex(index + 1);
-    localStorage.setItem("learnerspark-opam-result", JSON.stringify({ answers: nextAnswers, savedAt: new Date().toISOString(), bankSize: total, sequence: "mixed" }));
+    localStorage.setItem("learnerspark-opam-result", JSON.stringify({ answers: nextAnswers, savedAt: new Date().toISOString(), bankSize: total, sequence: "mixed", bank }));
     const totalScore = nextAnswers.reduce((sum, answer) => sum + answer.score, 0);
     saveAssessmentAttempt("opam", "OPAM Personality Practice", totalScore, Math.round((totalScore / total) * 100));
     setScreen("report");
@@ -166,6 +174,19 @@ export default function OPAM() {
                 The full bank runs through 120 original prompts in a mixed sequence. Self-description, forced choice, and situation reaction items keep changing shape so you practise staying
                 consistent rather than memorising a rhythm.
               </p>
+              <div className="bank-select">
+                <span className="bank-select-label">SELECT BANK</span>
+                <div className="bank-select-options">
+                  <button type="button" className={bank === "A" ? "active" : ""} onClick={() => setBank("A")}>
+                    <strong>Bank A</strong>
+                    <small>Original set</small>
+                  </button>
+                  <button type="button" className={bank === "B" ? "active" : ""} onClick={() => setBank("B")}>
+                    <strong>Bank B</strong>
+                    <small>New set · more variety</small>
+                  </button>
+                </div>
+              </div>
               <PrimaryButton onClick={start}>Start the assessment</PrimaryButton>
               <p className="assessment-note">
                 <ShieldCheck size={14} />{" "}
@@ -179,7 +200,7 @@ export default function OPAM() {
               </div>
               <div className="spec-number">120</div>
               <p>
-                {OPAM_COUNTS.self} self-description · {OPAM_COUNTS.forced} forced choice · {OPAM_COUNTS.situation} situations
+                {activeCounts.self} self-description · {activeCounts.forced} forced choice · {activeCounts.situation} situations
               </p>
               <div className="spec-list">
                 <div>
@@ -241,7 +262,7 @@ export default function OPAM() {
     const quickDecisions = answers.filter((answer) => answer.latency < 1000).length;
     const situationAnswers = answers.filter((answer) => answer.type === "situation");
     const bestFit = situationAnswers.filter((answer) => {
-      const source = itemById.get(answer.itemId);
+      const source = (bank === "A" ? itemByIdA : itemByIdB).get(answer.itemId);
       return source && source.type === "situation" && answer.value.charCodeAt(0) - 65 === source.best;
     }).length;
     const situationPct = situationAnswers.length ? Math.round((bestFit / situationAnswers.length) * 100) : 0;
@@ -324,7 +345,7 @@ export default function OPAM() {
             <div className="mentor-debrief">
               <div className="mentor-debrief-label">
                 <span>HOW TO READ THIS</span>
-                <span>LP / MIXED 120</span>
+                <span>LP / BANK {bank} · MIXED 120</span>
               </div>
               <p>
                 Use the two lists as a starting point, not a scoreboard. The qualities at the top are ones your choices consistently supported; the qualities at the bottom were chosen less often
@@ -379,19 +400,19 @@ export default function OPAM() {
                 <div className={isSelf ? "active" : ""}>
                   <span>01</span>
                   <small>
-                    Self-description · {answeredByType.self}/{OPAM_COUNTS.self}
+                    Self-description · {answeredByType.self}/{activeCounts.self}
                   </small>
                 </div>
                 <div className={isForced ? "active" : ""}>
                   <span>02</span>
                   <small>
-                    Forced choice · {answeredByType.forced}/{OPAM_COUNTS.forced}
+                    Forced choice · {answeredByType.forced}/{activeCounts.forced}
                   </small>
                 </div>
                 <div className={item.type === "situation" ? "active" : ""}>
                   <span>03</span>
                   <small>
-                    Situation reaction · {answeredByType.situation}/{OPAM_COUNTS.situation}
+                    Situation reaction · {answeredByType.situation}/{activeCounts.situation}
                   </small>
                 </div>
               </div>
